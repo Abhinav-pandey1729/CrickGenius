@@ -12,6 +12,8 @@ const Chat = () => {
   const [recognition, setRecognition] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
+  const [loading, setLoading] = useState(false); // Add loading state
+  const [error, setError] = useState(null); // Add error state for UI
   const navigate = useNavigate();
 
   // Initialize Web Speech API
@@ -33,7 +35,7 @@ const Chat = () => {
       rec.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
         setIsRecording(false);
-        alert('Speech recognition error: ' + event.error);
+        setError('Speech recognition error: ' + event.error);
       };
 
       rec.onend = () => {
@@ -43,12 +45,15 @@ const Chat = () => {
       setRecognition(rec);
     } else {
       console.warn('SpeechRecognition API not supported in this browser.');
+      setError('Speech recognition is not supported in this browser.');
     }
   }, []);
 
   // Start a new chat on mount (run once)
   useEffect(() => {
     let isMounted = true;
+    setLoading(true);
+    setError(null);
 
     const startNewChat = async () => {
       try {
@@ -69,9 +74,14 @@ const Chat = () => {
         }
       } catch (error) {
         console.error('Error starting new chat:', error);
-        if (isMounted && error.response?.status === 401) {
-          navigate('/');
+        if (isMounted) {
+          setError('Failed to start a new chat. Please try again.');
+          if (error.response?.status === 401) {
+            navigate('/');
+          }
         }
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
@@ -107,6 +117,8 @@ const Chat = () => {
     const userMessage = { sender: 'user', text: input };
     setMessages([...messages, userMessage]);
     setInput('');
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await axios.post(
@@ -125,18 +137,19 @@ const Chat = () => {
       // Ensure the current conversation remains selected
       setSelectedConversationId(response.data.conversation_id);
     } catch (error) {
-      console.error('Error:', error);
-      const errorMessage = { sender: 'bot', text: 'Sorry, something went wrong. Please try again.' };
-      setMessages((prev) => [...prev, errorMessage]);
+      console.error('Error sending message:', error);
+      setError('Failed to send message. Please try again.');
       if (error.response?.status === 401) {
         navigate('/');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleVoiceToggle = () => {
     if (!recognition) {
-      alert('Speech recognition is not supported in this browser.');
+      setError('Speech recognition is not supported in this browser.');
       return;
     }
 
@@ -150,6 +163,9 @@ const Chat = () => {
   };
 
   const handleNewChat = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/new_chat`,
@@ -166,14 +182,18 @@ const Chat = () => {
       setConversations(historyResponse.data.conversations);
     } catch (error) {
       console.error('Error starting new chat:', error);
+      setError('Failed to start a new chat. Please try again.');
       if (error.response?.status === 401) {
         navigate('/');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleConversationSelect = (conversationId) => {
     setSelectedConversationId(conversationId);
+    setError(null);
   };
 
   const handleProfile = () => {
@@ -181,6 +201,9 @@ const Chat = () => {
   };
 
   const handleLogout = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/logout`,
@@ -190,7 +213,9 @@ const Chat = () => {
       navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
-      alert('Failed to log out. Please try again.');
+      setError('Failed to log out. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -199,7 +224,7 @@ const Chat = () => {
       <ParticleWeb />
       <div className="sidebar">
         <h3>Conversations</h3>
-        <button onClick={handleNewChat} className="new-chat-button">
+        <button onClick={handleNewChat} className="new-chat-button" disabled={loading}>
           New Chat
         </button>
         <ul>
@@ -213,8 +238,10 @@ const Chat = () => {
             </li>
           ))}
         </ul>
-        <button onClick={handleProfile}>Profile</button>
-        <button onClick={handleLogout} className="logout-button">
+        <button onClick={handleProfile} disabled={loading}>
+          Profile
+        </button>
+        <button onClick={handleLogout} className="logout-button" disabled={loading}>
           Logout
         </button>
       </div>
@@ -222,6 +249,8 @@ const Chat = () => {
         <div className="chat-header">
           <h2>CrickGenius</h2>
         </div>
+        {loading && <div className="loading">Loading...</div>}
+        {error && <div className="error-message">{error}</div>}
         <div className="chat-messages">
           {messages.map((msg, index) => (
             <div key={index} className={`message ${msg.sender}`}>
@@ -236,14 +265,15 @@ const Chat = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Ask about players, matches, or trivia..."
-            disabled={isRecording}
+            disabled={isRecording || loading}
           />
-          <button onClick={handleSend} disabled={isRecording}>
+          <button onClick={handleSend} disabled={isRecording || loading}>
             Send
           </button>
           <button
             onClick={handleVoiceToggle}
             style={{ backgroundColor: isRecording ? '#ff4444' : '#4CAF50' }}
+            disabled={loading}
           >
             {isRecording ? 'Stop Recording' : 'Start Voice'}
           </button>
