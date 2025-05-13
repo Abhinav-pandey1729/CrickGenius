@@ -10,11 +10,14 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // Add loading state
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
+
     const endpoint = isLogin ? '/login' : '/register';
     try {
       const response = await axios.post(
@@ -22,11 +25,23 @@ const Login = () => {
         { username, password },
         { withCredentials: true }
       );
+      console.log(`${isLogin ? 'Login' : 'Register'} response:`, response.data);
       if (response.data.username) {
         navigate('/chat');
+      } else {
+        setError('Unexpected response from server');
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred');
+      console.error(`${isLogin ? 'Login' : 'Register'} error:`, err);
+      if (err.response) {
+        setError(err.response.data?.error || 'Failed to process request');
+      } else if (err.request) {
+        setError('No response from server. Please check your connection.');
+      } else {
+        setError('An error occurred. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,6 +54,8 @@ const Login = () => {
       </div>
       <div className="login-box">
         <h2>{isLogin ? 'Login' : 'Register'}</h2>
+        {error && <p className="error">{error}</p>}
+        {loading && <p className="loading">Loading...</p>}
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label>Username</label>
@@ -47,6 +64,7 @@ const Login = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           <div className="input-group">
@@ -56,10 +74,12 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
-          {error && <p className="error">{error}</p>}
-          <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
+          <button type="submit" disabled={loading}>
+            {isLogin ? 'Login' : 'Register'}
+          </button>
         </form>
         <p className="toggle-text">
           {isLogin ? "Don't have an account?" : 'Already have an account?'}
