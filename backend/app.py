@@ -7,7 +7,7 @@ from chatbot import get_response
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secret-key')
-CORS(app, supports_credentials=True),  origins=["https://fantasy-cricket-chatbot-frontend.vercel.app"])
+CORS(app, supports_credentials=True, origins=["https://fantasy-cricket-chatbot-frontend.vercel.app"])
 
 def init_db():
     conn = sqlite3.connect('database.db')
