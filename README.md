@@ -26,5 +26,5 @@ A conversational AI-powered chatbot to help cricket fans make smarter Fantasy Cr
    - Frontend: `http://localhost:3000`
 
 ## Deployment
-- Backend: Deploy to Render.
-- Frontend: Deploy to Vercel.
+- Backend: Deployed to Render.
+- Frontend: Deployed to Vercel.
