@@ -83,8 +83,18 @@ button:hover {
   background-color: #45a049;
 }
 
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
 .error {
   color: red;
+  margin-bottom: 20px;
+}
+
+.loading {
+  color: #4CAF50;
   margin-bottom: 20px;
 }
 
