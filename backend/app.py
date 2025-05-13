@@ -7,16 +7,14 @@ from chatbot import get_response
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secret-key')
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True),  origins=["https://fantasy-cricket-chatbot-frontend.vercel.app"])
 
 def init_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    # Drop and recreate users table to clear all users and ensure clean schema
     c.execute('DROP TABLE IF EXISTS users')
     c.execute('''CREATE TABLE users
                  (username TEXT PRIMARY KEY, password TEXT)''')
-    # Drop and recreate chats table to ensure clean state
     c.execute('DROP TABLE IF EXISTS chats')
     c.execute('''CREATE TABLE chats
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -197,4 +195,4 @@ def chat_history():
     return jsonify({'conversations': valid_conversations}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=False)
