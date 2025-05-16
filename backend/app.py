@@ -13,7 +13,7 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 # Allow CORS for the Vercel frontend
-CORS(app, supports_credentials=True, origins="*")
+CORS(app, supports_credentials=True, origins=["https://https://crick-genius.vercel.app/"])
 
 def init_db():
     conn = sqlite3.connect('database.db')
