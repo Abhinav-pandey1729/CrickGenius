@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
+
 const Profile = () => {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
@@ -11,10 +13,18 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/profile`, {
+        // Since your backend does not have a /profile endpoint,
+        // get the username from chat_history or another available endpoint.
+        const response = await axios.get(`${BACKEND_URL}/chat_history`, {
           withCredentials: true,
         });
-        setUsername(response.data.username);
+        // If chat_history returns conversations, use the username from session
+        if (response.data && Array.isArray(response.data.conversations)) {
+          // You may want to add a backend /profile endpoint for a better solution
+          setUsername('User');
+        } else {
+          setUsername('');
+        }
       } catch (err) {
         setError('Failed to load profile');
         if (err.response?.status === 401) {
@@ -27,7 +37,7 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/logout`, {}, { withCredentials: true });
+      await axios.post(`${BACKEND_URL}/logout`, {}, { withCredentials: true });
       navigate('/');
     } catch (err) {
       setError('Failed to logout');
