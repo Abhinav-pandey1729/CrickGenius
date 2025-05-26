@@ -5,20 +5,13 @@ from cricket_data import get_player_stats, get_match_conditions
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
 client = Groq(api_key=GROQ_API_KEY)
 
 def handle_query(query, history=None):
     """
     Process user query and return a response using Groq API with conversation history.
-    Args:
-        query (str): The user's query.
-        history (list): List of {"role": "user"|"assistant", "content": str} for prior messages.
-    Returns:
-        str: Response from the Groq model.
     """
     try:
-        # Base system prompt
         system_prompt = (
             "You are a Fantasy Cricket Chatbot Assistant, an expert in cricket analytics, "
             "fantasy cricket strategies, player performance, and match conditions. "
@@ -27,14 +20,10 @@ def handle_query(query, history=None):
             "If the query is a follow-up, use the provided conversation history to maintain context."
         )
 
-        # Prepare messages
         messages = [{"role": "system", "content": system_prompt}]
-        
-        # Add conversation history if provided
         if history:
-            messages.extend(history[-10:])  # Limit to last 10 messages to avoid token limit
-        
-        # Add current query
+            messages.extend(history[-10:])  # Limit to last 10 messages
+
         messages.append({"role": "user", "content": query})
 
         # Check for player stats or match conditions
@@ -47,7 +36,7 @@ def handle_query(query, history=None):
                         "role": "system",
                         "content": f"Player stats for {player_name}: {stats}"
                     })
-        
+
         if "match" in query.lower() or "conditions" in query.lower():
             conditions = get_match_conditions()
             if conditions:
@@ -56,7 +45,6 @@ def handle_query(query, history=None):
                     "content": f"Current match conditions: {conditions}"
                 })
 
-        # Call Groq API
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
@@ -71,23 +59,16 @@ def handle_query(query, history=None):
 
 def extract_player_name(query):
     """
-    Extract player name from query (placeholder logic).
-    Replace with more sophisticated NLP if needed.
+    Extract player name from query (simple heuristic).
     """
-    # Simple heuristic: assume player name is a capitalized word
     words = query.split()
-    for word in words:
-        if word.istitle() and len(word) > 2:
-            return word
+    capitalized = [word for word in words if word.istitle() and len(word) > 2]
+    if capitalized:
+        return ' '.join(capitalized)
     return None
 
 def get_response(query, history=None):
     """
     Wrapper for handle_query to match app.py's expected import and support history.
-    Args:
-        query (str): The user's query.
-        history (list): List of {"role": "user"|"assistant", "content": str} for prior messages.
-    Returns:
-        str: Response from the Groq model.
     """
     return handle_query(query, history=history)
