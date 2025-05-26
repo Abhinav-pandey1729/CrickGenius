@@ -195,6 +195,12 @@ def chat_history():
         if conv['messages'] or conv['first_query'] != 'New Chat'
     ]
     return jsonify({'conversations': valid_conversations}), 200
+    
+@app.route('/profile', methods=['GET'])
+def profile():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    return jsonify({'username': session['username']}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)), debug=False)
