@@ -5,6 +5,8 @@ import ParticleWeb from './components/ParticleWeb';
 import Footer from './components/Footer';
 import './Chat.css';
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
+
 const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -12,8 +14,8 @@ const Chat = () => {
   const [recognition, setRecognition] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
-  const [loading, setLoading] = useState(false); // Add loading state
-  const [error, setError] = useState(null); // Add error state for UI
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   // Initialize Web Speech API
@@ -33,7 +35,6 @@ const Chat = () => {
       };
 
       rec.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
         setIsRecording(false);
         setError('Speech recognition error: ' + event.error);
       };
@@ -44,7 +45,6 @@ const Chat = () => {
 
       setRecognition(rec);
     } else {
-      console.warn('SpeechRecognition API not supported in this browser.');
       setError('Speech recognition is not supported in this browser.');
     }
   }, []);
@@ -58,7 +58,7 @@ const Chat = () => {
     const startNewChat = async () => {
       try {
         const response = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/new_chat`,
+          `${BACKEND_URL}/new_chat`,
           {},
           { withCredentials: true }
         );
@@ -67,13 +67,12 @@ const Chat = () => {
           setMessages([]);
           // Fetch updated conversations
           const historyResponse = await axios.get(
-            `${process.env.REACT_APP_BACKEND_URL}/chat_history`,
+            `${BACKEND_URL}/chat_history`,
             { withCredentials: true }
           );
           setConversations(historyResponse.data.conversations);
         }
       } catch (error) {
-        console.error('Error starting new chat:', error);
         if (isMounted) {
           setError('Failed to start a new chat. Please try again.');
           if (error.response?.status === 401) {
@@ -122,7 +121,7 @@ const Chat = () => {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/chat`,
+        `${BACKEND_URL}/chat`,
         { query: input },
         { withCredentials: true }
       );
@@ -130,14 +129,12 @@ const Chat = () => {
       setMessages((prev) => [...prev, botMessage]);
       // Refresh conversations
       const historyResponse = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/chat_history`,
+        `${BACKEND_URL}/chat_history`,
         { withCredentials: true }
       );
       setConversations(historyResponse.data.conversations);
-      // Ensure the current conversation remains selected
       setSelectedConversationId(response.data.conversation_id);
     } catch (error) {
-      console.error('Error sending message:', error);
       setError('Failed to send message. Please try again.');
       if (error.response?.status === 401) {
         navigate('/');
@@ -168,7 +165,7 @@ const Chat = () => {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/new_chat`,
+        `${BACKEND_URL}/new_chat`,
         {},
         { withCredentials: true }
       );
@@ -176,12 +173,11 @@ const Chat = () => {
       setSelectedConversationId(response.data.conversation_id);
       // Refresh conversations
       const historyResponse = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/chat_history`,
+        `${BACKEND_URL}/chat_history`,
         { withCredentials: true }
       );
       setConversations(historyResponse.data.conversations);
     } catch (error) {
-      console.error('Error starting new chat:', error);
       setError('Failed to start a new chat. Please try again.');
       if (error.response?.status === 401) {
         navigate('/');
@@ -206,13 +202,12 @@ const Chat = () => {
 
     try {
       await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/logout`,
+        `${BACKEND_URL}/logout`,
         {},
         { withCredentials: true }
       );
       navigate('/');
     } catch (error) {
-      console.error('Error logging out:', error);
       setError('Failed to log out. Please try again.');
     } finally {
       setLoading(false);
@@ -233,6 +228,9 @@ const Chat = () => {
               key={conv.id}
               className={selectedConversationId === conv.id ? 'selected' : ''}
               onClick={() => handleConversationSelect(conv.id)}
+              tabIndex={0}
+              role="button"
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleConversationSelect(conv.id)}
             >
               {conv.first_query ? conv.first_query.substring(0, 30) + '...' : 'New Chat'}
             </li>
@@ -263,9 +261,10 @@ const Chat = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Ask about players, matches, or trivia..."
             disabled={isRecording || loading}
+            aria-label="Type your message"
           />
           <button onClick={handleSend} disabled={isRecording || loading}>
             Send
