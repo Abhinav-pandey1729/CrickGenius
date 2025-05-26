@@ -18,7 +18,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 CORS(
     app,
     supports_credentials=True,
-    origins=["https://crick-genius-babam7l6j-abhinav-pandeys-projects-e2b49309.vercel.app"]
+    origins=["https://crick-genius.vercel.app"]
 )
 
 @app.after_request
