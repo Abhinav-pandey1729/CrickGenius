@@ -5,12 +5,14 @@ import ParticleWeb from './components/ParticleWeb';
 import Footer from './components/Footer';
 import './Login.css';
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
+
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false); // Add loading state
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -21,18 +23,16 @@ const Login = () => {
     const endpoint = isLogin ? '/login' : '/register';
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}${endpoint}`,
+        `${BACKEND_URL}${endpoint}`,
         { username, password },
         { withCredentials: true }
       );
-      console.log(`${isLogin ? 'Login' : 'Register'} response:`, response.data);
       if (response.data.username) {
         navigate('/chat');
       } else {
         setError('Unexpected response from server');
       }
     } catch (err) {
-      console.error(`${isLogin ? 'Login' : 'Register'} error:`, err);
       if (err.response) {
         setError(err.response.data?.error || 'Failed to process request');
       } else if (err.request) {
@@ -58,23 +58,27 @@ const Login = () => {
         {loading && <p className="loading">Loading...</p>}
         <form onSubmit={handleSubmit}>
           <div className="input-group">
-            <label>Username</label>
+            <label htmlFor="username">Username</label>
             <input
+              id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
               disabled={loading}
+              autoComplete="username"
             />
           </div>
           <div className="input-group">
-            <label>Password</label>
+            <label htmlFor="password">Password</label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
+              autoComplete={isLogin ? "current-password" : "new-password"}
             />
           </div>
           <button type="submit" disabled={loading}>
@@ -83,7 +87,13 @@ const Login = () => {
         </form>
         <p className="toggle-text">
           {isLogin ? "Don't have an account?" : 'Already have an account?'}
-          <span onClick={() => setIsLogin(!isLogin)}>
+          <span
+            tabIndex={0}
+            role="button"
+            onClick={() => setIsLogin(!isLogin)}
+            onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setIsLogin(!isLogin)}
+            style={{ cursor: 'pointer', color: '#007bff', marginLeft: 4 }}
+          >
             {isLogin ? ' Register' : ' Login'}
           </span>
         </p>
